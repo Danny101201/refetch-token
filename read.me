@@ -1,0 +1,14 @@
+openssl rand -base64 32 // 隨機生成 base64 編碼沒加密
+
+openssl genpkey -algorithm RSA -out private_key.pem 
+// 私鑰
+// RSA 加密算馬長不是 2048 位元以上，對於安全性有一定的保障
+openssl rsa -pubout -in private_key.pem -out public_key.pem // 公鑰
+
+# 生成私钥的Base64编码
+cat private_key.pem | base64
+
+# 生成公钥的Base64编码
+cat public_key.pem | base64
+
+私鑰加密公鑰解密
