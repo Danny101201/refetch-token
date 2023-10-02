@@ -1,5 +1,5 @@
 import { CreateNextContextOptions } from "@trpc/server/adapters/next"
-import { verifyJwt } from "../utils/jwt"
+import { signJwt, verifyJwt } from "../utils/jwt"
 import { redisClient } from "../utils/connectRedis"
 import { findUniqueUser } from "../services/user.service"
 import { TRPCError } from "@trpc/server"
@@ -11,9 +11,7 @@ export const deserializeUser = async (
 
     const { req, res } = opt
     let access_token
-    if (req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
+    if (req.headers.authorization) {
       access_token = req.headers.authorization
     }
     const notAuthenticated = {
@@ -23,7 +21,12 @@ export const deserializeUser = async (
       prisma
     };
     if (!access_token) return notAuthenticated
-    const decode = verifyJwt<{ sub: string }>(access_token, 'accessTokenPublicKey')
+    const decode = verifyJwt<{ sub: string }>(
+      access_token.includes('Bearer')
+        ? access_token.substring(7)
+        : access_token,
+      'accessTokenPublicKey'
+    )
     if (!decode) return notAuthenticated
     const session = await redisClient.get(decode.sub)
     if (!session) return notAuthenticated

@@ -1,19 +1,16 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../createRouter";
+import { router, publicProcedure, protectProcedure } from "../createRouter";
 import { redisClient } from "../utils/connectRedis";
-import { connectDB } from "../utils/prisma";
 import { signJwt, verifyJwt } from "../utils/jwt";
-import jwt from "jsonwebtoken";
-import { customConfig } from "../config/default";
 import { authRouter } from "./auth.routes";
 import { userRouter } from "./user.routes";
 export const appRouter = router({
   auth: authRouter,
   user: userRouter,
-  getHello: publicProcedure
-    .query(async () => {
+  getHello: protectProcedure
+    .query(async ({ ctx }) => {
       const message = await redisClient.get('trpc')
-      return { message }
+      return { message, ctx: ctx.user }
     }),
   signToken:
     publicProcedure

@@ -1,9 +1,3 @@
-
-// Add a new user to the database
-// Refresh the access token
-// Sign in the registered user
-// Log out the user
-
 import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
 import { OptionsType } from 'cookies-next/lib/types';
@@ -11,7 +5,6 @@ import { getCookie, setCookie } from 'cookies-next';
 
 import { Context } from '../createContext';
 import { CreateUserSchema, createUserSchema, loginUserSchema, LoginUserSchema } from '../schema/user.schema';
-
 import {
   createUser,
   findUniqueUser,
@@ -20,6 +13,7 @@ import {
 } from '../services/user.service';
 
 import { signJwt, verifyJwt } from '../utils/jwt';
+import { prisma } from '../utils/prisma';
 import { redisClient } from '../utils/connectRedis';
 import { customConfig } from '../config/default';
 
@@ -53,9 +47,16 @@ export const registerHandler = async ({ input }: {
   }
   const hashPassword = await bcrypt.hash(input.password, 12)
   const user = await createUser({
-    ...input,
+    name: input.name,
+    email: input.email,
+    photo: input.photo,
     hashPassword,
     provider: 'local'
+  }, {
+    id: true,
+    name: true,
+    email: true,
+    photo: true
   })
   return {
     status: 'success',
@@ -73,14 +74,14 @@ export const loginHandler = async ({ input, ctx }: {
   const { req, res } = ctx
   const user = await findUser({ email: input.email })
   if (!user) {
-    return new TRPCError({
+    throw new TRPCError({
       code: 'BAD_REQUEST',
       message: 'user not found'
     })
   }
-  const isValidatePassword = await bcrypt.compare(user.hashPassword as string, input.password)
+  const isValidatePassword = await bcrypt.compare(input.password, user.hashPassword as string,)
   if (!isValidatePassword) {
-    return new TRPCError({
+    throw new TRPCError({
       code: 'BAD_REQUEST',
       message: 'Invalid password'
     })
@@ -130,7 +131,7 @@ export const refreshAccessTokenHandler = async ({ ctx }: {
   if (!session) {
     throw new TRPCError({ code: 'FORBIDDEN', message })
   }
-  const user = await findUniqueUser({ email: JSON.parse(session).id }, {})
+  const user = await findUniqueUser({ id: JSON.parse(session).id })
   if (!user) {
     throw new TRPCError({ code: 'FORBIDDEN', message })
   }

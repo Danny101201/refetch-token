@@ -1,22 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { api } from '~/utils/trpc'
-import { getCookie, setCookie } from 'cookies-next';
-function Page() {
-  const { data } = api.getHello.useQuery()
 
-  const { mutateAsync: getToken } = api.signToken.useMutation({
-    onSuccess(data, variables, context) {
-      console.log(data)
-    },
-  })
-  const { mutateAsync: register } = api.auth.registerUser.useMutation({})
+function HomePage() {
   return (
     <div>
-      <button onClick={() => getToken({ name: 'Danny' })}>getToken</button>
-      {data?.message}
-      <button onClick={() => register({ name: 'Danny' })}>register</button>
+      Home page
     </div>
   )
 }
 
-export default Page
+export default HomePage
